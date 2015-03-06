@@ -1,0 +1,32 @@
+# framework speceific
+game.register_country = function( iso, defs ){
+game.get_countries = function(){
+game.perform_action = function( name, args ){
+game.register_action = function( name, defs ){
+game.get_actions = function(){
+game.register_player = function( name, defs ){
+game.get_players = function( ){
+game.register_interface = function( defs ){
+
+# game specific
+attack_country = function( country ){
+change_country_diplomacy = function( country_from, country_towards, diplomacy ){
+country_get_meta = function( country ){
+country_has_troops = function( country, troops ){
+end_turn = function(){
+get_country_by_iso = function( iso ){
+get_current_player = function( ){
+get_player_by_id = function( id ){
+infrastructure_has_been_upgraded_in_turn = function( country ){
+investment_cost = function( country ){
+is_attacking_country = function( country_from, country_towards ){
+is_bordering = function( country, bordering_country ){
+is_current_player = function( player ){
+is_valid_diplomacy = function( diplomacy ){
+move_troops = function( country_from, country_towards, troops ){
+player_has_energy = function( player, energy ){
+player_has_won = function( player ){
+produce_energy = function( country ){
+reset_invested_countries = function(){
+update_turn = function( previouse_player, current_player){
+upgrade_infrastructure = function( country ){
