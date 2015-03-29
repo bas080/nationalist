@@ -15,6 +15,28 @@ geome = {};
       var countries = {};
       var players   = {};
 
+    //LOGGING
+      game.log = ( function( ){
+        var log = [];
+        var container = document.getElementById( "log" );
+        return function( strings ){
+          log.push( strings );
+          var item = document.createElement( "div" );
+          item.className = 'item';
+          for ( index in strings ){
+            var string = strings[index];
+            var string_elem = document.createElement( "span" );
+            if ( typeof( string.color ) != undefined ){
+              string_elem.style.color = string.color;
+            }
+            string_elem.innerHTML = string.text+ ' ';
+            string_elem.className = 'text';
+            item.appendChild( string_elem );
+          }
+          return container.appendChild( item );
+        };
+      })();
+
     //COUNTRIES
 
       var get_country_name = function( country ){

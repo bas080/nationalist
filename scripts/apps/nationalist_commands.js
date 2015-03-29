@@ -14,14 +14,7 @@ term.package.register( 'nationalist',{  //name of the package. Consider this the
     ( function( action_name, action ){
       term.command.register( action_name, function(){
         this.on_command = function( p ){
-          var result = nationalist.perform_action( action_name, p );
-
-          if ( nationalist.state.fail_reason )
-          result = nationalist.state.fail_reason;
-
-          nationalist.state.fail_reason = false;
-
-          return result;
+          return nationalist.perform_action( action_name, p );
         };
         if ( action.on_complete != undefined )
         this.on_complete = action.on_complete;
@@ -100,7 +93,7 @@ term.shortcut.register( 'Backspace', function( event ){
   return term.screen.cursor.remove( -1 );
 } );
 
-term.shortcut.register( 'Del', function( event ){
+term.shortcut.register( 'Delete', function( event ){
   return term.screen.cursor.remove( 1 );
 } );
 

@@ -202,7 +202,102 @@ var nationalist = geome.Game( {
         return ( player.energy >= energy );
       };
 
+    //MOVING
+
+      var Move = function( defs ){
+
+        var f_country = defs.f_country;
+        var t_country = defs.t_country;
+        var troops = defs.troops;
+        var player = game.get_player_by_id( f_country.player );
+
+        this.get = function( ){
+          return defs;
+        };
+
+        this.cost = function( ){
+          var infrastructure_sum = f_country.infrastructure + t_country.infrastructure;
+          return troops - ( troops * 0.1  * infrastructure_sum );
+        };
+
+        this.perform = function( ){
+          f_country.troops -= troops;
+          t_country.troops += troops;
+          game.log( [
+            { text : player.name, color : player.color },
+            { text : 'moved', color : 'lime' },
+            { text : troops, color : 'red' },
+            { text : 'troops from', color : 'lime' },
+            { text : f_country.name, color : player.color },
+            { text : 'to', color : 'lime' },
+            { text : t_country.name, color : player.color }
+          ]);
+        };
+
+        this.allowed = function(){
+          if ( player_has_energy( this.cost() ) )
+            return 'player does not have required energy';
+          if ( state.current_player != f_country.player )
+            return t_country.name + ' is not your country';
+          if ( f_country.player != t_country.player )
+            return 'cannot move to enemy country';
+          if ( !country_has_troops( f_country, troops ) )
+            return 'country does not have that many troops';
+          if ( !is_bordering( f_country, t_country ) )
+            return 'is not bordering ' + t_country.name;
+          if ( this.cost() > player.energy )
+            return player.name + ' do not have enough energy';
+          return true;
+        };
+
+      };
+
+      game.Move = Move;
+
     //ATTACK
+      var Attack = function( defs ){
+
+        var f_country = defs.f_country;
+        var t_country = defs.t_country;
+        var troops = defs.troops;
+        var attacker = game.get_player_by_id( f_country.player );
+        var defender = game.get_player_by_id( t_country.player );
+
+        this.get = function(){
+          return defs;
+        };
+
+        this.cost = function( ){
+        };
+
+        this.perform = function( ){
+          game.log([
+            { text : attacker.name , color : attacker.color },
+            { text : 'attacked'    , color : 'lime' },
+            { text : f_country.name, color : defender.color },
+            { text : 'from'        , color : 'lime' },
+            { text : t_country.name, color : attacker.color },
+            { text : 'with'        , color : 'lime' },
+            { text : troops        , color : 'red' },
+            { text : 'troops'      , color : 'lime' }
+          ]);
+        };
+
+        this.allowed = function( ){
+          if ( state.current_player != f_country.player )
+            return f_country.name + ' is not your country';
+          if ( f_country.troops < troops )
+            return troops + ' troops is to much. ' + f_country.name + ' only has ' + f_country.troops + 'troops';
+          if ( f_country.player == t_country.player )
+            return 'cannot attack own country';
+          if ( !is_bordering( f_country, t_country ) )
+            return f_country.name + ' does not border ' + t_country.name;
+          return true;
+        };
+
+      };
+
+      game.Attack = Attack;
 
       var battle_chance = function( granularity ){
         //value between 0 and 1. 0.5 being the value that occurs most often.
@@ -215,7 +310,7 @@ var nationalist = geome.Game( {
 
       var attack_country = function( country_from, country_towards, troops ){
         var att_force = troops * ( 1 + country_from.infrastructure * 0.1);
-        var def_force = ( country_towards.troops * 1.1 ) *  * country_towards.infrastructure;
+        var def_force = ( country_towards.troops * 1.1 ) * country_towards.infrastructure;
 
         var attack_force_ratio = att_force / def_force;
 
@@ -250,11 +345,10 @@ var nationalist = geome.Game( {
       };
 
       cost.invest = function( country ){
-        return ( country.energy / 2 ) + ( country.infrastructure * country.energy );
       };
 
       cost.move = function( country_from, country_towards, troops ){
-        var infrastructure_sum = country_from.infrastructure + country_towards.infrastructure;
+        var infrastructure_sum = f_country.infrastructure + t_country.infrastructure;
         return troops - ( troops * 0.1  * infrastructure_sum );
       };
 
@@ -281,11 +375,41 @@ var nationalist = geome.Game( {
         }
       };
 
-    //INFRASTRUCTURE
+    //UPGRADE
 
       //Upgrading system concerning the countries. This increases the
       //effectiveness of country energy production and battle efficiency.
       ////////////////////////////////////////////////////////////////
+
+      var Upgrade = function( defs ){
+        var country = defs.country;
+        var player = game.get_player_by_id( country.player );
+        this.get = function(){
+          return defs;
+        };
+        this.cost = function(){
+          return ( country.energy / 2 ) + ( country.infrastructure * country.energy );
+        };
+        this.perform = function(){
+          country.infrastructure += 1;
+          player.energy -= this.cost();
+        };
+        this.allowed = function(){
+          //returns a string containing the reason why the performing is not
+          //allowed. If it is allowed true is returned
+          if ( p.country.player == state.current_player )
+            return 'you do not own this country';
+          if ( p.country.infrastructure < 3 )
+            return 'fully upgraded already';
+          if ( player.energy > cost.invest( p.country ) )
+            return 'you do not have enough energy';
+          if ( !infrastructure_has_been_upgraded_in_turn( p.country ) )
+            return 'already upgraded infrastructure in this turn';
+          return true;
+        };
+      };
+
+      game.Upgrade = Upgrade;
 
       state.invested_countries = [];
 
@@ -306,41 +430,23 @@ var nationalist = geome.Game( {
       };
 
       var upgrade_infrastructure = function( country ){
-        country.infrastructure += 1;
-        //pay function
-        var player = game.get_player_by_id( country.player );
-        player.energy -= cost.invest( country );
       };
 
       var get_infrastructure = function( country ){
         return country.infrastructure;
       };
 
-    //MOVING
-
-      var move_troops = function( country_from, country_towards, troops ){
-        country_from.troops -= troops;
-        country_towards.troops += troops;
-      };
-
     //REGISTERE ACTIONS
-
-      var reason = function( is, response ){
-        console.log( is, response );
-        if ( !is )
-        state.fail_reason = response;
-        return is;
-      };
 
       game.register_action( 'attack', {
         description : 'attack a neighboring country with an amount of troops',
         options : '<country> <country> <troops>',
         parameters : function( args ){
-          return {
-            from    : game.get_country_by_iso(args[0]),
-            toward : game.get_country_by_iso(args[1]),
-            troops : args[2]
-          };
+          return new Attack( {
+            f_country : game.get_country_by_string( args[1] ),
+            t_country : game.get_country_by_string( args[2] ),
+            troops : args[3] * 1
+          });
         },
         on_complete : function( args ){
           if ( args.length == 2 ){
@@ -352,23 +458,23 @@ var nationalist = geome.Game( {
           }else if( args.length == 3 ){
             var country = game.get_country_by_string( args[1] );
             return game.each( country.borders, function( iso ){
-              return game.get_countries()[iso].name;
+              var country = game.get_country_by_string( iso );
+              if ( country != undefined && country.player != state.current_player )
+              return country.name;
             });
           }else if( args.length == 4 ){
-            return [ '<number>' ];
+            return [ '<#troops>' ];
           }
         },
-        on_perform : function( p ){
-          change_country_diplomacy( p.from, p.diplomacy );
-          return p.from + ' is now ' + p.diplomacy + 'ing ' + p.toward;
+        on_perform : function( attack ){
+          var allowed = attack.allowed();
+          if ( allowed === true )
+          return attack.perform();
+          else
+          return allowed;
         },
-        allowed : function( p ){
-          return (
-            is_bordering( p.from, p.toward ) &&
-            is_current_player( game.get_player_by_id( p.from.player ) ) &&
-            !is_current_player( game.get_player_by_id( p.toward.player ) ) &&
-            is_valid_diplomacy( p.diplomacy )
-          );
+        allowed : function(){
+          return true;
         }
       });
 
@@ -428,11 +534,6 @@ var nationalist = geome.Game( {
           if ( args.length == 2 ){
             return Object.keys( game.get_actions() );
           }else{
-            console.log( game.get_actions(), args[1] );
-            console.log( game.get_actions()[args[1]].on_complete( args.slice(1) ) );
-
-            console.log( args.slice(1) );
-
             return game.get_actions()[args[1]].on_complete( args.slice(1) );
           }
         },
@@ -447,29 +548,32 @@ var nationalist = geome.Game( {
           };
         },
         on_perform : function( p ){
-          console.log( p );
           var energy = cost[p.action]( p.country_from, p.country_towards, p.troops );
           return energy + ' energy';
         },
         allowed : function( p ){
           return true;
         }
-      })
+      });
 
       game.register_action( 'move', {
         description : 'moves units from one country to another',
         options : '<country> <country> <troops>',
         parameters : function( args ){
-          return {
-            from    : game.get_country_by_string( args[1] ),
-            toward    : game.get_country_by_string( args[2] ),
-            troops  : args[3] * 1
-          };
+          return new Move( {
+            f_country : game.get_country_by_string( args[1] ),
+            t_country : game.get_country_by_string( args[2] ),
+            troops : args[3] * 1
+          });
         },
-        on_perform : function( p ){
-          move_troops( p.from, p.toward, p.troops );
-          plot_range( 'troops' );
-          return 'moved troops';
+        on_perform : function( move ){
+          var allowed = move.allowed();
+          if ( allowed === true ){
+            move.perform();
+            plot_range( 'troops' );
+          }else{
+            return allowed;
+          }
         },
         on_complete : function( args ){
           if ( args.length == 2 ){
@@ -480,65 +584,54 @@ var nationalist = geome.Game( {
             );
           }else if( args.length == 3 ){
             var country = game.get_country_by_string( args[1] );
-            console.log( country );
-            var countries = game.each( country.borders, function( iso ){
+            return game.each( country.borders, function( iso ){
               var border = game.get_countries()[iso];
               if ( border ){
                 if ( country.player == border.player )
-                return border;
+                return border.name;
               }
-            });
-            console.log( countries );
-            return game.each( countries, function( country ){
-              return country.name;
             });
           }else if( args.length == 4 ){
             return [ '<#troops>' ];
           }
         },
-        allowed : function( p ){
-          var player = game.get_player_by_id( p.from.player );
-          return(
-            reason( ( state.current_player == p.from.player ), 'cannot move to enemy country' ) &&
-            reason( ( p.from.player == p.toward.player ), 'not your country' ) &&
-            reason( country_has_troops( p.from, p.troops ), 'country does not have that many troops' ) &&
-            reason( is_bordering( p.from, p.toward ), 'is not bordering ' + p.toward.name )
-          );
+        allowed : function(){
+          return true;
         }
       });
 
-      game.register_action( 'invest', {
+      game.register_action( 'upgrade', {
         description : 'invest in a country that has not yet been invested in within this turn',
         options : '<country>',
         on_complete : function( args ){
-          countries = game.each( game.get_countries(), function( country ){
-            if ( country.player == state.current_player ){
-              return country.name;
-            }
-          });
-          console.log( countries );
-          return countries;
+          if ( args.length == 2 ){
+            return game.each( game.get_countries(), function( country ){
+              if ( country.player == state.current_player ){
+                return country.name;
+              }
+            });
+          }
         },
         parameters : function( args ){
-          console.log(game.get_country_by_iso( game.get_country_iso( args[1] ) ) );
           return {
-            country : game.get_country_by_iso( game.get_country_iso( args[1] ) )
+            country : game.get_country_by_string( args[1] )
           };
         },
         on_perform : function( p ){
+          var player = game.get_player_by_id( p.country.player );
           upgrade_infrastructure( p.country );
           var infrastructure = p.country.infrastructure;
           plot_range( 'infrastructure' );
+          game.log([
+            { text : player.name, color : player.color },
+            { text  : 'upgraded', color : 'lime' },
+            { text  : p.country.name, color : 'skyblue' }
+          ]);
           return p.country.name + ' infrastructure level ' + infrastructure;
         },
         allowed : function( p ){
-          var player = game.get_player_by_id( p.country.player );
-          return (
-            reason( ( p.country.player == state.current_player ), 'you do not own this country') &&
-            reason( ( p.country.infrastructure < 3 ), 'fully upgraded already' ) &&
-            reason( ( player.energy > cost.invest( p.country ) ), 'you do not have enough energy' ) &&
-            reason( !infrastructure_has_been_upgraded_in_turn( p.country ), 'already upgraded infrastructure in this turn' )
-          );
+          return true; //TODO use this function and link it to the allowed
+          //functions in the Attack and Move constructors
         }
       });
 
@@ -646,10 +739,16 @@ var nationalist = geome.Game( {
           return {};
         },
         on_perform : function( p ){
+          var ender = game.get_player_by_id( state.current_player );
           var index = end_turn(); //returns the new player index
           var player = game.get_player_by_id( index ).name;
           state.turn += 1;
           render_state();
+          console.log( ender );
+          game.log([
+            { text : ender.name, color : ender.color },
+            { text  : 'ended turn', color : 'lime' }
+          ]);
           return player + ' are now playing';
         },
         allowed : function( p ){
@@ -664,4 +763,12 @@ var nationalist = geome.Game( {
 
     //FUNTIONS THAT DEPEND ON OTHER FUNTIONS
       render_state();
+
+      var player = game.get_player_by_id( state.current_player );
+      game.log([
+        { text : 'scenario initiated. ', color : 'lime' },
+        { text : player.name , color : player.color },
+        { text : 'start', color : 'lime' }
+      ]);
+
 }});

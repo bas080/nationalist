@@ -410,6 +410,9 @@ Term = function (container){
   this.keyboard = new function (){
     var self = this;
     window.addEventListener("keydown", function (event){
+      //event.preventDefault();
+    });
+    window.addEventListener("keypress", function (event){
       event.preventDefault();
       self.keydown( event );
     });
@@ -421,6 +424,18 @@ Term = function (container){
       return Term.shortcut.perform( combo );
     };
     this.combo = function ( event ){
+      var keycodes = {
+        8 : "Backspace",
+        9 : "Tab",
+        13 : "Enter",
+        17 : "Ctrl",
+        18 : "Alt",
+        37 : "Left",
+        38 : "Up",
+        39 : "Right",
+        40 : "Down",
+        46 : "Delete"
+      };
       var combo = '';
       if ( event.ctrlKey )
       combo += 'Ctrl ';
@@ -428,7 +443,8 @@ Term = function (container){
       combo += 'Alt ';
       if ( ( event.ctrlKey || event.altKey ) && event.shiftKey )
       combo += 'Shift ';
-      combo += event.key;
+      combo += keycodes[ event.keyCode ] || String.fromCharCode( event.charCode );
+      //combo += event.key;
       return combo;
     };
   };

@@ -2,6 +2,8 @@ body{
   font-family: monospace;
   font-weight: bold;
   font-size: 14px;
+  color: white;
+  background-color: #111;
 }
 
 #worldmap{
@@ -10,7 +12,6 @@ body{
  position: absolute;
  top: 0px;
  width: 100%;
- background-color: #0F0F0F;
 }
 
 #terminal #pre_cursor{
@@ -32,10 +33,19 @@ body{
   color: white;
   left: 0px;
   opacity: 0.9;
-  padding: 1%;
+  padding: 4px;
   position: absolute;
   top: 0px;
-  width: 512px;
+  background-color: #000;
+}
+
+#log{
+  background-color: #000;
+  position: absolute;
+  right: 0px;
+  bottom:0px;
+  text-align: right;
+  padding: 4px;
 }
 
 #state{
@@ -43,8 +53,6 @@ body{
   bottom: 0px;
   left: 0px;
   display: block;
-  width: 98%;
-  padding: 4px 1%;
-  color: black;
-  background-color: #FF0;
+  padding: 8px;
+  background-color:#000;
 }
