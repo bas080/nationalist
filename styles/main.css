@@ -1,0 +1,58 @@
+body{
+  font-family: monospace;
+  font-weight: bold;
+  font-size: 14px;
+  color: white;
+  background-color: #111;
+}
+
+#worldmap{
+ height: 100%;
+ left: 0px;
+ position: absolute;
+ top: 0px;
+ width: 100%;
+}
+
+#terminal #pre_cursor{
+  height: 1em;
+  display: inline-block;
+}
+
+#terminal #pre_cursor.blink{
+  border-right: 2px solid white;
+  margin-right: -2px;
+}
+
+#terminal #pos_cursor{
+  display: inline-block;
+}
+
+#terminal{
+  white-space: pre-wrap;
+  color: white;
+  left: 0px;
+  opacity: 0.9;
+  padding: 4px;
+  position: absolute;
+  top: 0px;
+  background-color: #000;
+}
+
+#log{
+  background-color: #000;
+  position: absolute;
+  right: 0px;
+  bottom:0px;
+  text-align: right;
+  padding: 4px;
+}
+
+#state{
+  position: fixed;
+  bottom: 0px;
+  left: 0px;
+  display: block;
+  padding: 8px;
+  background-color:#000;
+}
